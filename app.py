@@ -28,7 +28,7 @@ menu = st.sidebar.selectbox(
         "Media Analyzer",
         "Frame Processor",
         "Audio Visualizer",
-        "Batch Processing"
+        "Audio to WAV Converter"
     ]
 )
 
