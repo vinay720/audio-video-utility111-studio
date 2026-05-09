@@ -330,7 +330,7 @@ elif menu == "Audio Visualizer":
 # BATCH PROCESSING
 # ==================================================
 
-elif menu == "Batch Processing":
+elif menu == "Audio converter to WAG":
 
     st.header("📦 Batch Processing")
 
