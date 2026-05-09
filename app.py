@@ -262,23 +262,69 @@ elif menu == "Audio Visualizer":
 
     if audio_file:
 
+        # Save file
         path = f"temp/{audio_file.name}"
 
         with open(path, "wb") as f:
             f.write(audio_file.read())
 
-        y, sr = librosa.load(path)
+        st.audio(path)
 
-        # Waveform
-        fig, ax = plt.subplots()
+        try:
 
-        librosa.display.waveshow(
-            y,
-            sr=sr,
-            ax=ax
-        )
+            # Load audio
+            y, sr = librosa.load(path, sr=None)
 
-        st.pyplot(fig)
+            # =================================
+            # WAVEFORM
+            # =================================
+
+            st.subheader("🎵 Waveform")
+
+            fig, ax = plt.subplots(figsize=(10, 4))
+
+            librosa.display.waveshow(
+                y,
+                sr=sr,
+                ax=ax
+            )
+
+            ax.set_title("Waveform")
+
+            st.pyplot(fig)
+
+            # =================================
+            # SPECTROGRAM
+            # =================================
+
+            st.subheader("📊 Spectrogram")
+
+            D = librosa.stft(y)
+
+            S_db = librosa.amplitude_to_db(
+                np.abs(D),
+                ref=np.max
+            )
+
+            fig2, ax2 = plt.subplots(figsize=(10, 4))
+
+            img = librosa.display.specshow(
+                S_db,
+                sr=sr,
+                x_axis='time',
+                y_axis='log',
+                ax=ax2
+            )
+
+            ax2.set_title("Spectrogram")
+
+            fig2.colorbar(img, ax=ax2, format="%+2.0f dB")
+
+            st.pyplot(fig2)
+
+        except Exception as e:
+
+            st.error(f"Error: {e}")
 
 # ==================================================
 # BATCH PROCESSING
