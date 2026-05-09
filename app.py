@@ -1,30 +1,21 @@
-# app.py
-
 import streamlit as st
 import os
 import zipfile
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import librosa
 import librosa.display
-import cv2
 import moviepy.editor as mp
 
 from pydub import AudioSegment
 from pydub.silence import detect_silence
 
-# =========================
-# CREATE FOLDERS
-# =========================
-
+# Create folders
 os.makedirs("temp", exist_ok=True)
 os.makedirs("outputs", exist_ok=True)
-os.makedirs("frames", exist_ok=True)
 
-# =========================
-# STREAMLIT CONFIG
-# =========================
-
+# Streamlit config
 st.set_page_config(page_title="Audio + Video Utility Studio")
 
 st.title("🎵🎥 Audio + Video Utility Studio")
@@ -41,9 +32,9 @@ menu = st.sidebar.selectbox(
     ]
 )
 
-# =====================================================
-# 1. AUDIO TOOLKIT
-# =====================================================
+# ==================================================
+# AUDIO TOOLKIT
+# ==================================================
 
 if menu == "Audio Toolkit":
 
@@ -56,22 +47,20 @@ if menu == "Audio Toolkit":
 
     if audio_file:
 
-        path = "temp/audio"
+        path = f"temp/{audio_file.name}"
 
         with open(path, "wb") as f:
             f.write(audio_file.read())
 
-        st.audio(audio_file)
+        st.audio(path)
 
         audio = AudioSegment.from_file(path)
 
-        # Trim
-        st.subheader("✂ Trim Audio")
-
+        # Trim Audio
         start = st.number_input("Start", 0)
         end = st.number_input("End", 10)
 
-        if st.button("Trim"):
+        if st.button("Trim Audio"):
 
             trimmed = audio[start*1000:end*1000]
 
@@ -81,9 +70,7 @@ if menu == "Audio Toolkit":
 
             st.audio(output)
 
-        # Convert
-        st.subheader("🔄 Convert Format")
-
+        # Convert Format
         convert_type = st.selectbox(
             "Convert To",
             ["mp3", "wav"]
@@ -98,9 +85,7 @@ if menu == "Audio Toolkit":
             st.success("Converted Successfully")
 
         # Normalize
-        st.subheader("🔊 Normalize Volume")
-
-        if st.button("Normalize"):
+        if st.button("Normalize Audio"):
 
             normalized = audio.normalize()
 
@@ -111,19 +96,17 @@ if menu == "Audio Toolkit":
             st.audio(output)
 
         # Silence Detection
-        st.subheader("🔇 Silence Detection")
-
         silence = detect_silence(
             audio,
             min_silence_len=1000,
             silence_thresh=-40
         )
 
-        st.write(silence)
+        st.write("Silence Parts:", silence)
 
-# =====================================================
-# 2. VIDEO TOOLKIT
-# =====================================================
+# ==================================================
+# VIDEO TOOLKIT
+# ==================================================
 
 elif menu == "Video Toolkit":
 
@@ -136,35 +119,17 @@ elif menu == "Video Toolkit":
 
     if video:
 
-        video_path = "temp/video.mp4"
+        path = f"temp/{video.name}"
 
-        with open(video_path, "wb") as f:
+        with open(path, "wb") as f:
             f.write(video.read())
 
-        st.video(video)
+        st.video(path)
 
-        clip = mp.VideoFileClip(video_path)
-
-        # Trim Video
-        st.subheader("✂ Trim Video")
-
-        start = st.number_input("Start Second", 0)
-        end = st.number_input("End Second", 10)
-
-        if st.button("Trim Video"):
-
-            trimmed = clip.subclip(start, end)
-
-            output = "outputs/trimmed_video.mp4"
-
-            trimmed.write_videofile(output)
-
-            st.video(output)
+        clip = mp.VideoFileClip(path)
 
         # Extract Audio
-        st.subheader("🎵 Extract Audio")
-
-        if st.button("Extract"):
+        if st.button("Extract Audio"):
 
             output = "outputs/audio.mp3"
 
@@ -173,8 +138,6 @@ elif menu == "Video Toolkit":
             st.audio(output)
 
         # Resize
-        st.subheader("📉 Resize Video")
-
         if st.button("Resize 480p"):
 
             resized = clip.resize(height=480)
@@ -185,27 +148,33 @@ elif menu == "Video Toolkit":
 
             st.video(output)
 
-# =====================================================
-# 3. MEDIA ANALYZER
-# =====================================================
+# ==================================================
+# MEDIA ANALYZER
+# ==================================================
 
 elif menu == "Media Analyzer":
 
     st.header("📊 Media Analyzer")
 
-    media = st.file_uploader(
+    file = st.file_uploader(
         "Upload Media",
         type=["mp3", "wav", "mp4"]
     )
 
-    if media:
+    if file:
 
-        st.write("Filename:", media.name)
-        st.write("Size:", round(media.size/1024, 2), "KB")
+        st.write("Filename:", file.name)
+        st.write("Size:", round(file.size/1024, 2), "KB")
 
-# =====================================================
-# 4. FRAME PROCESSOR
-# =====================================================
+        if "audio" in file.type:
+            st.audio(file)
+
+        elif "video" in file.type:
+            st.video(file)
+
+# ==================================================
+# FRAME PROCESSOR
+# ==================================================
 
 elif menu == "Frame Processor":
 
@@ -218,7 +187,7 @@ elif menu == "Frame Processor":
 
     if video:
 
-        path = "temp/frame_video.mp4"
+        path = f"temp/{video.name}"
 
         with open(path, "wb") as f:
             f.write(video.read())
@@ -226,6 +195,8 @@ elif menu == "Frame Processor":
         cap = cv2.VideoCapture(path)
 
         count = 0
+
+        os.makedirs("frames", exist_ok=True)
 
         while True:
 
@@ -241,7 +212,11 @@ elif menu == "Frame Processor":
                     cv2.COLOR_BGR2GRAY
                 )
 
-                edges = cv2.Canny(gray, 100, 200)
+                edges = cv2.Canny(
+                    gray,
+                    100,
+                    200
+                )
 
                 cv2.imwrite(
                     f"frames/frame_{count}.jpg",
@@ -252,11 +227,11 @@ elif menu == "Frame Processor":
 
         cap.release()
 
-        st.success("Frames Saved")
+        st.success("Frames Extracted")
 
-# =====================================================
-# 5. AUDIO VISUALIZER
-# =====================================================
+# ==================================================
+# AUDIO VISUALIZER
+# ==================================================
 
 elif menu == "Audio Visualizer":
 
@@ -269,7 +244,7 @@ elif menu == "Audio Visualizer":
 
     if audio_file:
 
-        path = "temp/audio.wav"
+        path = f"temp/{audio_file.name}"
 
         with open(path, "wb") as f:
             f.write(audio_file.read())
@@ -277,8 +252,6 @@ elif menu == "Audio Visualizer":
         y, sr = librosa.load(path)
 
         # Waveform
-        st.subheader("Waveform")
-
         fig, ax = plt.subplots()
 
         librosa.display.waveshow(
@@ -289,36 +262,17 @@ elif menu == "Audio Visualizer":
 
         st.pyplot(fig)
 
-        # Spectrogram
-        st.subheader("Spectrogram")
-
-        X = librosa.stft(y)
-
-        Xdb = librosa.amplitude_to_db(abs(X))
-
-        fig2, ax2 = plt.subplots()
-
-        librosa.display.specshow(
-            Xdb,
-            sr=sr,
-            x_axis='time',
-            y_axis='hz',
-            ax=ax2
-        )
-
-        st.pyplot(fig2)
-
-# =====================================================
-# 6. BATCH PROCESSING
-# =====================================================
+# ==================================================
+# BATCH PROCESSING
+# ==================================================
 
 elif menu == "Batch Processing":
 
     st.header("📦 Batch Processing")
 
     files = st.file_uploader(
-        "Upload Multiple Audio Files",
-        type=["wav", "mp3", "ogg", "flac", "m4a"],
+        "Upload Multiple Files",
+        type=["wav", "mp3", "ogg", "flac", "m4a", "aac"],
         accept_multiple_files=True
     )
 
@@ -333,34 +287,33 @@ elif menu == "Batch Processing":
             with open(path, "wb") as f:
                 f.write(file.read())
 
-            # Load any audio format
             audio = AudioSegment.from_file(path)
 
-            # Normalize audio
             normalized = audio.normalize()
 
-            # Convert all outputs to WAV
             output_name = file.name.split(".")[0] + ".wav"
 
-            output = f"outputs/batch/{output_name}"
+            output_path = f"outputs/batch/{output_name}"
 
-            normalized.export(output, format="wav")
+            normalized.export(
+                output_path,
+                format="wav"
+            )
 
-        # Create ZIP
         zip_path = "outputs/batch.zip"
 
-        zipf = zipfile.ZipFile(zip_path, "w")
+        with zipfile.ZipFile(zip_path, "w") as zipf:
 
-        for root, dirs, filenames in os.walk("outputs/batch"):
+            for root, dirs, filenames in os.walk("outputs/batch"):
 
-            for filename in filenames:
+                for filename in filenames:
 
-                zipf.write(
-                    os.path.join(root, filename),
-                    filename
-                )
+                    file_path = os.path.join(root, filename)
 
-        zipf.close()
+                    zipf.write(
+                        file_path,
+                        filename
+                    )
 
         st.success("Batch Processing Completed")
 
