@@ -228,7 +228,78 @@ elif menu == "Frame Processor":
         cap.release()
 
         st.success("Frames Extracted")
+elif menu == "Frame Processor":
 
+    st.header("🖼 Frame Processor")
+
+    video = st.file_uploader(
+        "Upload Video",
+        type=["mp4"]
+    )
+
+    if video:
+
+        path = f"temp/{video.name}"
+
+        with open(path, "wb") as f:
+            f.write(video.read())
+
+        cap = cv2.VideoCapture(path)
+
+        count = 0
+
+        os.makedirs("frames", exist_ok=True)
+
+        while True:
+
+            ret, frame = cap.read()
+
+            if not ret:
+                break
+
+            if count % 30 == 0:
+
+                gray = cv2.cvtColor(
+                    frame,
+                    cv2.COLOR_BGR2GRAY
+                )
+
+                edges = cv2.Canny(
+                    gray,
+                    100,
+                    200
+                )
+
+                cv2.imwrite(
+                    f"frames/frame_{count}.jpg",
+                    edges
+                )
+
+            count += 1
+
+        cap.release()
+
+        # Create ZIP
+        zip_path = "outputs/frames.zip"
+
+        with zipfile.ZipFile(zip_path, "w") as zipf:
+
+            for file in os.listdir("frames"):
+
+                zipf.write(
+                    f"frames/{file}",
+                    file
+                )
+
+        st.success("Frames Extracted")
+
+        with open(zip_path, "rb") as f:
+
+            st.download_button(
+                "⬇ Download Frames ZIP",
+                f,
+                file_name="frames.zip"
+            )
 # ==================================================
 # AUDIO VISUALIZER
 # ==================================================
