@@ -457,7 +457,7 @@ elif menu == "Audio Visualizer":
 
 elif menu == "Audio converter":
 
-    st.header("📦 Batch Processing")
+    st.header("Audio converter")
 
     files = st.file_uploader(
         "Upload Multiple Audio Files",
