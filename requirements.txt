@@ -10,3 +10,4 @@ imageio-ffmpeg
 ffmpeg-python
 scipy
 soundfile
+audioread
