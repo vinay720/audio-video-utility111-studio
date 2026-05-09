@@ -1,73 +1,66 @@
+# =========================================================
+# 🎵🎥 AUDIO + VIDEO UTILITY STUDIO
+# =========================================================
+
 import streamlit as st
 import os
 import zipfile
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import librosa
 import librosa.display
 import moviepy.editor as mp
-import scipy.fftpack
-import soundfile as sf
-import speech_recognition as sr
 
 from pydub import AudioSegment
 from pydub.silence import detect_silence
 
-try:
-    import cv2
-except:
-    st.error("OpenCV not installed")
+# =========================================================
+# CREATE FOLDERS
+# =========================================================
 
 os.makedirs("temp", exist_ok=True)
 os.makedirs("outputs", exist_ok=True)
 os.makedirs("frames", exist_ok=True)
 
+# =========================================================
+# STREAMLIT CONFIG
+# =========================================================
+
 st.set_page_config(
-    page_title="AI Media Utility Studio",
+    page_title="Audio + Video Utility Studio",
     layout="wide"
 )
 
-st.markdown("""
-<style>
-body {
-    background-color: #0E1117;
-    color: white;
-}
+st.title("🎵🎥 Audio + Video Utility Studio")
 
-.stApp {
-    background-color: #0E1117;
-}
+# =========================================================
+# SIDEBAR MENU
+# =========================================================
 
-h1, h2, h3 {
-    color: #00FFAA;
-}
-</style>
-""", unsafe_allow_html=True)
+menu = st.sidebar.selectbox(
+    "Select Module",
+    [
+        "Audio Toolkit",
+        "Video Toolkit",
+        "Media Analyzer",
+        "Frame Processor",
+        "Audio Visualizer",
+        "Audio converter"
+    ]
+)
 
-st.title("🎵🎥 AI Media Utility Studio")
+# =========================================================
+# 1. AUDIO TOOLKIT
+# =========================================================
 
-tabs = st.tabs([
-    "Audio Toolkit",
-    "Video Toolkit",
-    "Media Analyzer",
-    "Frame Processor",
-    "Audio Visualizer",
-    "Audio to WAV",
-    "Voice Changer",
-    "MP4 to GIF",
-    "Speech-to-Text",
-    "Beat Detection",
-    "Spectrum Analyzer"
-])
-
-with tabs[0]:
+if menu == "Audio Toolkit":
 
     st.header("🎵 Audio Toolkit")
 
     audio_file = st.file_uploader(
         "Upload Audio",
-        type=["mp3", "wav"],
-        key="audio_toolkit"
+        type=["mp3", "wav", "ogg", "flac", "aac", "m4a"]
     )
 
     if audio_file:
@@ -81,8 +74,14 @@ with tabs[0]:
 
         audio = AudioSegment.from_file(path)
 
-        start = st.number_input("Start Time", 0, key="start")
-        end = st.number_input("End Time", 10, key="end")
+        # =========================================
+        # TRIM AUDIO
+        # =========================================
+
+        st.subheader("✂ Trim Audio")
+
+        start = st.number_input("Start Time (sec)", 0)
+        end = st.number_input("End Time (sec)", 10)
 
         if st.button("Trim Audio"):
 
@@ -92,21 +91,34 @@ with tabs[0]:
 
             trimmed.export(output, format="wav")
 
+            st.success("Audio Trimmed")
+
             st.audio(output)
+
+        # =========================================
+        # CONVERT FORMAT
+        # =========================================
+
+        st.subheader("🔄 Convert Format")
 
         convert_type = st.selectbox(
             "Convert To",
-            ["mp3", "wav"],
-            key="convert"
+            ["mp3", "wav"]
         )
 
-        if st.button("Convert"):
+        if st.button("Convert Audio"):
 
             output = f"outputs/converted.{convert_type}"
 
             audio.export(output, format=convert_type)
 
-            st.success("Converted Successfully")
+            st.success("Conversion Completed")
+
+        # =========================================
+        # NORMALIZE AUDIO
+        # =========================================
+
+        st.subheader("🔊 Normalize Volume")
 
         if st.button("Normalize Audio"):
 
@@ -118,22 +130,31 @@ with tabs[0]:
 
             st.audio(output)
 
+        # =========================================
+        # SILENCE DETECTION
+        # =========================================
+
+        st.subheader("🔇 Silence Detection")
+
         silence = detect_silence(
             audio,
             min_silence_len=1000,
             silence_thresh=-40
         )
 
-        st.write("Silence Parts:", silence)
+        st.write("Silent Regions:", silence)
 
-with tabs[1]:
+# =========================================================
+# 2. VIDEO TOOLKIT
+# =========================================================
+
+elif menu == "Video Toolkit":
 
     st.header("🎥 Video Toolkit")
 
     video = st.file_uploader(
         "Upload Video",
-        type=["mp4"],
-        key="video_toolkit"
+        type=["mp4", "avi", "mov"]
     )
 
     if video:
@@ -147,32 +168,66 @@ with tabs[1]:
 
         clip = mp.VideoFileClip(path)
 
+        # =========================================
+        # TRIM VIDEO
+        # =========================================
+
+        st.subheader("✂ Trim Video")
+
+        start = st.number_input("Start Second", 0)
+        end = st.number_input("End Second", 10)
+
+        if st.button("Trim Video"):
+
+            trimmed = clip.subclip(start, end)
+
+            output = "outputs/trimmed_video.mp4"
+
+            trimmed.write_videofile(output)
+
+            st.video(output)
+
+        # =========================================
+        # EXTRACT AUDIO
+        # =========================================
+
+        st.subheader("🎵 Extract Audio")
+
         if st.button("Extract Audio"):
 
-            output = "outputs/audio.mp3"
+            output = "outputs/extracted_audio.mp3"
 
             clip.audio.write_audiofile(output)
 
             st.audio(output)
 
-        if st.button("Resize 480p"):
+        # =========================================
+        # RESIZE VIDEO
+        # =========================================
+
+        st.subheader("📉 Resize Video")
+
+        if st.button("Resize to 480p"):
 
             resized = clip.resize(height=480)
 
-            output = "outputs/resized.mp4"
+            output = "outputs/resized_video.mp4"
 
             resized.write_videofile(output)
 
             st.video(output)
 
-with tabs[2]:
+# =========================================================
+# 3. MEDIA ANALYZER
+# =========================================================
+
+elif menu == "Media Analyzer":
 
     st.header("📊 Media Analyzer")
 
     file = st.file_uploader(
         "Upload Media",
-        type=["mp3", "wav", "mp4"],
-        key="media"
+        type=["mp3", "wav", "mp4"]
     )
 
     if file:
@@ -182,49 +237,79 @@ with tabs[2]:
         with open(path, "wb") as f:
             f.write(file.read())
 
+        st.success("File Uploaded Successfully")
+
         st.write("📁 Filename:", file.name)
+
         st.write("📦 File Size:", round(file.size / 1024, 2), "KB")
+
+        # =========================================
+        # AUDIO ANALYSIS
+        # =========================================
 
         if "audio" in file.type:
 
             audio = AudioSegment.from_file(path)
 
-            st.write("⏱ Duration:", len(audio)/1000, "Seconds")
+            st.subheader("🎵 Audio Information")
+
+            duration = len(audio) / 1000
+
+            st.write("⏱ Duration:", duration, "Seconds")
+
             st.write("🔊 Channels:", audio.channels)
+
             st.write("🎚 Sample Rate:", audio.frame_rate, "Hz")
+
             st.write("💾 Bit Depth:", audio.sample_width * 8, "bits")
 
             st.audio(path)
+
+        # =========================================
+        # VIDEO ANALYSIS
+        # =========================================
 
         elif "video" in file.type:
 
             clip = mp.VideoFileClip(path)
 
+            st.subheader("🎥 Video Information")
+
             st.write("⏱ Duration:", round(clip.duration, 2), "Seconds")
-            st.write("🎞 FPS:", clip.fps)
+
+            st.write("🎞 FPS (Frames Per Second):", clip.fps)
+
             st.write("📺 Resolution:", clip.size)
 
             cap = cv2.VideoCapture(path)
 
-            frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            frame_count = int(
+                cap.get(cv2.CAP_PROP_FRAME_COUNT)
+            )
 
-            bitrate = int(cap.get(cv2.CAP_PROP_BITRATE))
+            bitrate = int(
+                cap.get(cv2.CAP_PROP_BITRATE)
+            )
 
             st.write("🖼 Total Frames:", frame_count)
-            st.write("💾 Bitrate:", bitrate)
+
+            st.write("💾 Bitrate:", bitrate, "bps")
 
             cap.release()
 
             st.video(path)
 
-with tabs[3]:
+# =========================================================
+# 4. FRAME PROCESSOR
+# =========================================================
+
+elif menu == "Frame Processor":
 
     st.header("🖼 Frame Processor")
 
     video = st.file_uploader(
         "Upload Video",
-        type=["mp4"],
-        key="frame"
+        type=["mp4"]
     )
 
     if video:
@@ -267,16 +352,19 @@ with tabs[3]:
 
         cap.release()
 
+        # ZIP FRAMES
         zip_path = "outputs/frames.zip"
 
         with zipfile.ZipFile(zip_path, "w") as zipf:
 
-            for file in os.listdir("frames"):
+            for file_name in os.listdir("frames"):
 
                 zipf.write(
-                    f"frames/{file}",
-                    file
+                    f"frames/{file_name}",
+                    file_name
                 )
+
+        st.success("Frames Extracted")
 
         with open(zip_path, "rb") as f:
 
@@ -286,14 +374,17 @@ with tabs[3]:
                 file_name="frames.zip"
             )
 
-with tabs[4]:
+# =========================================================
+# 5. AUDIO VISUALIZER
+# =========================================================
+
+elif menu == "Audio Visualizer":
 
     st.header("📈 Audio Visualizer")
 
     audio_file = st.file_uploader(
         "Upload Audio",
-        type=["mp3", "wav"],
-        key="visualizer"
+        type=["mp3", "wav"]
     )
 
     if audio_file:
@@ -305,53 +396,73 @@ with tabs[4]:
 
         st.audio(path)
 
-        y, sr = librosa.load(path, sr=None)
+        try:
 
-        fig, ax = plt.subplots(figsize=(12, 4))
+            y, sr = librosa.load(path, sr=None)
 
-        librosa.display.waveshow(
-            y,
-            sr=sr,
-            ax=ax
-        )
+            # =========================================
+            # WAVEFORM
+            # =========================================
 
-        ax.set_title("Waveform")
+            st.subheader("🎵 Waveform")
 
-        st.pyplot(fig)
+            fig, ax = plt.subplots(figsize=(10, 4))
 
-        D = librosa.stft(y)
+            librosa.display.waveshow(
+                y,
+                sr=sr,
+                ax=ax
+            )
 
-        S_db = librosa.amplitude_to_db(
-            np.abs(D),
-            ref=np.max
-        )
+            ax.set_title("Waveform")
 
-        fig2, ax2 = plt.subplots(figsize=(12, 4))
+            st.pyplot(fig)
 
-        img = librosa.display.specshow(
-            S_db,
-            sr=sr,
-            x_axis='time',
-            y_axis='log',
-            cmap='magma',
-            ax=ax2
-        )
+            # =========================================
+            # SPECTROGRAM
+            # =========================================
 
-        ax2.set_title("Spectrogram")
+            st.subheader("📊 Spectrogram")
 
-        fig2.colorbar(img, ax=ax2)
+            D = librosa.stft(y)
 
-        st.pyplot(fig2)
+            S_db = librosa.amplitude_to_db(
+                np.abs(D),
+                ref=np.max
+            )
 
-with tabs[5]:
+            fig2, ax2 = plt.subplots(figsize=(10, 4))
 
-    st.header("🎵 Audio to WAV Converter")
+            img = librosa.display.specshow(
+                S_db,
+                sr=sr,
+                x_axis='time',
+                y_axis='log',
+                ax=ax2
+            )
+
+            ax2.set_title("Spectrogram")
+
+            fig2.colorbar(img, ax=ax2)
+
+            st.pyplot(fig2)
+
+        except Exception as e:
+
+            st.error(f"Error: {e}")
+
+# =========================================================
+# 6. BATCH PROCESSING
+# =========================================================
+
+elif menu == "Audio converter":
+
+    st.header("📦 Batch Processing")
 
     files = st.file_uploader(
-        "Upload Audio Files",
-        type=["mp3", "wav", "ogg", "flac"],
-        accept_multiple_files=True,
-        key="wav"
+        "Upload Multiple Audio Files",
+        type=["wav", "mp3", "ogg", "flac", "m4a", "aac"],
+        accept_multiple_files=True
     )
 
     if files:
@@ -365,17 +476,21 @@ with tabs[5]:
             with open(path, "wb") as f:
                 f.write(file.read())
 
-            st.audio(path)
-
             audio = AudioSegment.from_file(path)
+
+            normalized = audio.normalize()
 
             output_name = file.name.split(".")[0] + ".wav"
 
             output_path = f"outputs/batch/{output_name}"
 
-            audio.export(output_path, format="wav")
+            normalized.export(
+                output_path,
+                format="wav"
+            )
 
-        zip_path = "outputs/audio_wav_files.zip"
+        # CREATE ZIP
+        zip_path = "outputs/batch.zip"
 
         with zipfile.ZipFile(zip_path, "w") as zipf:
 
@@ -385,175 +500,17 @@ with tabs[5]:
 
                     file_path = os.path.join(root, filename)
 
-                    zipf.write(file_path, filename)
+                    zipf.write(
+                        file_path,
+                        filename
+                    )
+
+        st.success("✅ Batch Processing Completed")
 
         with open(zip_path, "rb") as f:
 
             st.download_button(
-                "⬇ Download WAV ZIP",
+                "⬇ Download Processed ZIP",
                 f,
-                file_name="audio_wav_files.zip"
+                file_name="processed_files.zip"
             )
-
-with tabs[6]:
-
-    st.header("🎤 Voice Changer")
-
-    audio_file = st.file_uploader(
-        "Upload Audio",
-        type=["wav", "mp3"],
-        key="voice"
-    )
-
-    if audio_file:
-
-        path = f"temp/{audio_file.name}"
-
-        with open(path, "wb") as f:
-            f.write(audio_file.read())
-
-        audio = AudioSegment.from_file(path)
-
-        mode = st.selectbox(
-            "Select Voice Effect",
-            ["Robot", "Deep"]
-        )
-
-        if mode == "Robot":
-
-            changed = audio.speedup(
-                playback_speed=1.3
-            )
-
-        else:
-
-            changed = audio.speedup(
-                playback_speed=0.8
-            )
-
-        output = "outputs/voice_changed.wav"
-
-        changed.export(output, format="wav")
-
-        st.audio(output)
-
-with tabs[7]:
-
-    st.header("🎞 MP4 to GIF Converter")
-
-    video = st.file_uploader(
-        "Upload MP4",
-        type=["mp4"],
-        key="gif"
-    )
-
-    if video:
-
-        path = f"temp/{video.name}"
-
-        with open(path, "wb") as f:
-            f.write(video.read())
-
-        clip = mp.VideoFileClip(path)
-
-        gif_path = "outputs/output.gif"
-
-        clip.write_gif(gif_path)
-
-        st.image(gif_path)
-
-with tabs[8]:
-
-    st.header("🧠 AI Speech-to-Text")
-
-    audio_file = st.file_uploader(
-        "Upload WAV File",
-        type=["wav"],
-        key="speech"
-    )
-
-    if audio_file:
-
-        path = f"temp/{audio_file.name}"
-
-        with open(path, "wb") as f:
-            f.write(audio_file.read())
-
-        r = sr.Recognizer()
-
-        with sr.AudioFile(path) as source:
-
-            audio_data = r.record(source)
-
-            text = r.recognize_google(audio_data)
-
-            st.text_area(
-                "Recognized Text",
-                text,
-                height=300
-            )
-
-with tabs[9]:
-
-    st.header("🥁 Beat Detection")
-
-    audio_file = st.file_uploader(
-        "Upload Audio",
-        type=["mp3", "wav"],
-        key="beat"
-    )
-
-    if audio_file:
-
-        path = f"temp/{audio_file.name}"
-
-        with open(path, "wb") as f:
-            f.write(audio_file.read())
-
-        y, sr = librosa.load(path)
-
-        tempo, beats = librosa.beat.beat_track(
-            y=y,
-            sr=sr
-        )
-
-        st.write("🎵 Tempo:", tempo)
-        st.write("🥁 Beat Frames:", beats)
-
-with tabs[10]:
-
-    st.header("📊 Spectrum Analyzer")
-
-    audio_file = st.file_uploader(
-        "Upload Audio",
-        type=["wav", "mp3"],
-        key="spectrum"
-    )
-
-    if audio_file:
-
-        path = f"temp/{audio_file.name}"
-
-        with open(path, "wb") as f:
-            f.write(audio_file.read())
-
-        y, sr = librosa.load(path)
-
-        fft = np.abs(
-            scipy.fftpack.fft(y)
-        )
-
-        freqs = scipy.fftpack.fftfreq(
-            len(fft)
-        ) * sr
-
-        fig, ax = plt.subplots(figsize=(12, 4))
-
-        ax.plot(
-            freqs[:5000],
-            fft[:5000]
-        )
-
-        ax.set_title("Audio Spectrum Analyzer")
-
-        st.pyplot(fig)
