@@ -318,7 +318,7 @@ elif menu == "Batch Processing":
 
     files = st.file_uploader(
         "Upload Multiple Audio Files",
-        type=["wav"],
+        type=["wav", "mp3", "ogg", "flac", "m4a"],
         accept_multiple_files=True
     )
 
@@ -333,14 +333,20 @@ elif menu == "Batch Processing":
             with open(path, "wb") as f:
                 f.write(file.read())
 
+            # Load any audio format
             audio = AudioSegment.from_file(path)
 
+            # Normalize audio
             normalized = audio.normalize()
 
-            output = f"outputs/batch/{file.name}"
+            # Convert all outputs to WAV
+            output_name = file.name.split(".")[0] + ".wav"
+
+            output = f"outputs/batch/{output_name}"
 
             normalized.export(output, format="wav")
 
+        # Create ZIP
         zip_path = "outputs/batch.zip"
 
         zipf = zipfile.ZipFile(zip_path, "w")
