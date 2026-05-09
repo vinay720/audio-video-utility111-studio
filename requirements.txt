@@ -1,7 +1,9 @@
 streamlit
-moviepy
-opencv-python
+moviepy==1.0.3
+opencv-python-headless
 librosa
 pydub
 numpy
 matplotlib
+imageio
+imageio-ffmpeg
