@@ -389,15 +389,15 @@ elif menu == "Audio Visualizer":
             st.error(f"Error: {e}")
 
 # ==================================================
-# BATCH PROCESSING
+# AUDIO TO WAV CONVERTER
 # ==================================================
 
-elif menu == "Audio converter to WAG":
+elif menu == "Audio to WAV Converter":
 
-    st.header("📦 Batch Processing")
+    st.header("🎵 Audio to WAV Converter")
 
     files = st.file_uploader(
-        "Upload Multiple Files",
+        "Upload Multiple Audio Files",
         type=["wav", "mp3", "ogg", "flac", "m4a", "aac"],
         accept_multiple_files=True
     )
@@ -408,25 +408,58 @@ elif menu == "Audio converter to WAG":
 
         for file in files:
 
+            # Save file
             path = f"temp/{file.name}"
 
             with open(path, "wb") as f:
                 f.write(file.read())
 
-            audio = AudioSegment.from_file(path)
+            # =====================================
+            # SHOW AUDIO PLAYER
+            # =====================================
 
-            normalized = audio.normalize()
+            st.subheader(f"🎵 {file.name}")
+
+            st.audio(path)
+
+            # =====================================
+            # WAVEFORM VISUALIZATION
+            # =====================================
+
+            y, sr = librosa.load(path, sr=None)
+
+            fig, ax = plt.subplots(figsize=(10, 3))
+
+            librosa.display.waveshow(
+                y,
+                sr=sr,
+                ax=ax
+            )
+
+            ax.set_title("Waveform")
+
+            st.pyplot(fig)
+
+            # =====================================
+            # CONVERT TO WAV
+            # =====================================
+
+            audio = AudioSegment.from_file(path)
 
             output_name = file.name.split(".")[0] + ".wav"
 
             output_path = f"outputs/batch/{output_name}"
 
-            normalized.export(
+            audio.export(
                 output_path,
                 format="wav"
             )
 
-        zip_path = "outputs/batch.zip"
+        # =====================================
+        # CREATE ZIP
+        # =====================================
+
+        zip_path = "outputs/audio_wav_files.zip"
 
         with zipfile.ZipFile(zip_path, "w") as zipf:
 
@@ -441,12 +474,16 @@ elif menu == "Audio converter to WAG":
                         filename
                     )
 
-        st.success("Batch Processing Completed")
+        st.success("✅ Conversion Completed")
+
+        # =====================================
+        # DOWNLOAD BUTTON
+        # =====================================
 
         with open(zip_path, "rb") as f:
 
             st.download_button(
-                "Download ZIP",
+                "⬇ Download WAV ZIP",
                 f,
-                file_name="processed_files.zip"
+                file_name="audio_wav_files.zip"
             )
