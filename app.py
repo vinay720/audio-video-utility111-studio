@@ -175,59 +175,6 @@ elif menu == "Media Analyzer":
 # ==================================================
 # FRAME PROCESSOR
 # ==================================================
-
-elif menu == "Frame Processor":
-
-    st.header("🖼 Frame Processor")
-
-    video = st.file_uploader(
-        "Upload Video",
-        type=["mp4"]
-    )
-
-    if video:
-
-        path = f"temp/{video.name}"
-
-        with open(path, "wb") as f:
-            f.write(video.read())
-
-        cap = cv2.VideoCapture(path)
-
-        count = 0
-
-        os.makedirs("frames", exist_ok=True)
-
-        while True:
-
-            ret, frame = cap.read()
-
-            if not ret:
-                break
-
-            if count % 30 == 0:
-
-                gray = cv2.cvtColor(
-                    frame,
-                    cv2.COLOR_BGR2GRAY
-                )
-
-                edges = cv2.Canny(
-                    gray,
-                    100,
-                    200
-                )
-
-                cv2.imwrite(
-                    f"frames/frame_{count}.jpg",
-                    edges
-                )
-
-            count += 1
-
-        cap.release()
-
-        st.success("Frames Extracted")
 elif menu == "Frame Processor":
 
     st.header("🖼 Frame Processor")
