@@ -163,14 +163,76 @@ elif menu == "Media Analyzer":
 
     if file:
 
-        st.write("Filename:", file.name)
-        st.write("Size:", round(file.size/1024, 2), "KB")
+        path = f"temp/{file.name}"
+
+        with open(path, "wb") as f:
+            f.write(file.read())
+
+        st.success("File Uploaded Successfully")
+
+        # =========================================
+        # COMMON DETAILS
+        # =========================================
+
+        st.write("📁 Filename:", file.name)
+        st.write("📦 File Size:", round(file.size / 1024, 2), "KB")
+
+        # =========================================
+        # AUDIO ANALYSIS
+        # =========================================
 
         if "audio" in file.type:
-            st.audio(file)
+
+            audio = AudioSegment.from_file(path)
+
+            st.subheader("🎵 Audio Information")
+
+            duration = len(audio) / 1000
+
+            st.write("⏱ Duration:", duration, "Seconds")
+
+            st.write("🔊 Channels:", audio.channels)
+
+            st.write("🎚 Sample Rate:", audio.frame_rate, "Hz")
+
+            st.write("💾 Bit Depth:", audio.sample_width * 8, "bits")
+
+            st.audio(path)
+
+        # =========================================
+        # VIDEO ANALYSIS
+        # =========================================
 
         elif "video" in file.type:
-            st.video(file)
+
+            clip = mp.VideoFileClip(path)
+
+            st.subheader("🎥 Video Information")
+
+            st.write("⏱ Duration:", round(clip.duration, 2), "Seconds")
+
+            st.write("🎞 FPS (Frames Per Second):", clip.fps)
+
+            st.write("📺 Resolution:", clip.size)
+
+            # OpenCV analysis
+            cap = cv2.VideoCapture(path)
+
+            frame_count = int(
+                cap.get(cv2.CAP_PROP_FRAME_COUNT)
+            )
+
+            bitrate = int(
+                cap.get(cv2.CAP_PROP_BITRATE)
+            )
+
+            st.write("🖼 Total Frames:", frame_count)
+
+            st.write("💾 Bitrate:", bitrate, "bps")
+
+            cap.release()
+
+            st.video(path)
 
 # ==================================================
 # FRAME PROCESSOR
